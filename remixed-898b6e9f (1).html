@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoramento de Contratos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #ecfeff 0%, #f0f9ff 50%, #fef3c7 100%);
+            background-attachment: fixed;
+            color: #0f172a;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 0 1px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            border: 1px solid rgba(14, 165, 233, 0.15);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 12px rgba(20, 184, 166, 0.15), 0 0 1px rgba(0,0,0,0.1);
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .kpi-change {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .kpi-change.positive {
+            color: #14b8a6;
+        }
+
+        .kpi-change.negative {
+            color: #ef4444;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 0 1px rgba(0,0,0,0.1);
+            border: 1px solid rgba(14, 165, 233, 0.15);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #0f172a;
+        }
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .alert-item {
+            padding: 1rem;
+            border-radius: 12px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .alert-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .alert-item.critical {
+            background: linear-gradient(to right, #fef2f2 0%, #ffffff 100%);
+            border-color: #ef4444;
+        }
+
+        .alert-item.warning {
+            background: linear-gradient(to right, #fffbeb 0%, #ffffff 100%);
+            border-color: #f59e0b;
+        }
+
+        .alert-item.opportunity {
+            background: linear-gradient(to right, #ecfdf5 0%, #ffffff 100%);
+            border-color: #14b8a6;
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert-icon {
+            font-size: 1.25rem;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .alert-description {
+            margin-left: 2rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .alert-action {
+            margin-left: 2rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(241, 245, 249, 0.8);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .client-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .client-table th {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .client-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .client-table tr:hover {
+            background: linear-gradient(to right, #ecfeff 0%, #ffffff 100%);
+            transform: scale(1.005);
+            transition: all 0.2s;
+        }
+
+        .client-table tbody tr {
+            transition: all 0.2s;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-badge.critical {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+
+        .status-badge.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #d97706;
+            border: 1px solid #fcd34d;
+        }
+
+        .status-badge.good {
+            background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+            color: #0f766e;
+            border: 1px solid #5eead4;
+        }
+
+        .score-bar {
+            width: 100px;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .score-fill.critical {
+            background: linear-gradient(to right, #ef4444 0%, #f87171 100%);
+        }
+
+        .score-fill.warning {
+            background: linear-gradient(to right, #f59e0b 0%, #fbbf24 100%);
+        }
+
+        .score-fill.good {
+            background: linear-gradient(to right, #14b8a6 0%, #2dd4bf 100%);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+            color: white;
+            box-shadow: 0 2px 4px rgba(20, 184, 166, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+            box-shadow: 0 4px 8px rgba(20, 184, 166, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+            color: white;
+            border-color: #14b8a6;
+            box-shadow: 0 2px 4px rgba(20, 184, 166, 0.3);
+        }
+
+        .filter-btn:hover {
+            border-color: #14b8a6;
+            transform: translateY(-1px);
+        }
+
+        /* Detalhes do Cliente */
+        .client-detail {
+            display: none;
+        }
+
+        .client-detail.active {
+            display: block;
+        }
+
+        .client-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .client-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .client-meta {
+            color: #718096;
+            margin-top: 0.5rem;
+        }
+
+        .health-score {
+            text-align: center;
+        }
+
+        .health-score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0 auto 0.5rem;
+            border: 8px solid;
+        }
+
+        .health-score-circle.critical {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-color: #ef4444;
+            color: #dc2626;
+        }
+
+        .health-score-circle.warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
+            color: #d97706;
+        }
+
+        .health-score-circle.good {
+            background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+            border-color: #14b8a6;
+            color: #0f766e;
+        }
+
+        .credit-profile {
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-width: 320px;
+        }
+
+        .credit-profile-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .credit-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .credit-item:last-child {
+            border-bottom: none;
+        }
+
+        .credit-label {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .credit-value {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .credit-bar {
+            width: 100%;
+            height: 24px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin-top: 0.5rem;
+        }
+
+        .credit-bar-fill {
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .credit-bar-fill.low {
+            background: linear-gradient(to right, #14b8a6 0%, #2dd4bf 100%);
+        }
+
+        .credit-bar-fill.medium {
+            background: linear-gradient(to right, #f59e0b 0%, #fbbf24 100%);
+        }
+
+        .credit-bar-fill.high {
+            background: linear-gradient(to right, #ef4444 0%, #f87171 100%);
+        }
+
+        .credit-bar-fill.critical {
+            background: linear-gradient(to right, #b91c1c 0%, #dc2626 100%);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .chart-container {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(14, 165, 233, 0.1);
+        }
+
+        .chart-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #0f172a;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            height: 200px;
+            padding: 1rem 0;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(to top, #14b8a6 0%, #06b6d4 100%);
+            border-radius: 8px 8px 0 0;
+            position: relative;
+            transition: all 0.3s;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(20, 184, 166, 0.2);
+        }
+
+        .bar:hover {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+
+        .bar.below-target {
+            background: linear-gradient(to top, #ef4444 0%, #f87171 100%);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+        }
+
+        .bar.above-target {
+            background: linear-gradient(to top, #14b8a6 0%, #2dd4bf 100%);
+            box-shadow: 0 2px 4px rgba(20, 184, 166, 0.3);
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: #718096;
+            white-space: nowrap;
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .product-card {
+            padding: 1rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .product-card:hover {
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .product-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #0f172a;
+        }
+
+        .product-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #14b8a6;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .back-button:hover {
+            color: #0d9488;
+            transform: translateX(-2px);
+        }
+
+        .comparison-table {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .comparison-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table .label {
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .comparison-table .value {
+            text-align: right;
+        }
+
+        .comparison-table .contracted {
+            color: #718096;
+        }
+
+        .comparison-table .actual {
+            font-weight: 600;
+        }
+
+        .comparison-table .variance {
+            font-weight: 600;
+        }
+
+        .comparison-table .variance.positive {
+            color: #14b8a6;
+        }
+
+        .comparison-table .variance.negative {
+            color: #ef4444;
+        }
+
+        /* Chat Interno */
+        .chat-container {
+            margin-top: 2rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-messages {
+            padding: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-message {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            max-width: 70%;
+        }
+
+        .chat-message.vendedor {
+            align-self: flex-end;
+        }
+
+        .chat-message.gestor {
+            align-self: flex-start;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .message-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .chat-message.vendedor .message-bubble {
+            background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-message.gestor .message-bubble {
+            background: #f1f5f9;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        .chat-message.vendedor .message-time {
+            text-align: right;
+        }
+
+        .chat-input-container {
+            padding: 1rem 1.5rem;
+            background: white;
+            border-top: 2px solid #e2e8f0;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: #14b8a6;
+            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+        }
+
+        .chat-send-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chat-send-btn:hover {
+            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(20, 184, 166, 0.3);
+        }
+
+        .chat-send-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>📊 Sistema de Monitoramento de Contratos</h1>
+        <div class="header-info">
+            <span>👤 Vendedor: <strong>João Silva</strong></span>
+            <span>📅 Período: <strong>Janeiro 2026</strong></span>
+            <span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; border-radius: 20px;">🟢 Sistema Online</span>
+        </div>
+    </div>
+
+    <!-- Dashboard Principal -->
+    <div id="dashboard-main" class="container">
+        <!-- KPIs -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">👥 Clientes Ativos</div>
+                <div class="kpi-value">45</div>
+                <div class="kpi-change positive">↑ +3 vs mês anterior</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">🚨 Alertas Críticos</div>
+                <div class="kpi-value" style="color: #ef4444;">9</div>
+                <div class="kpi-change negative">↑ +3 vs semana anterior</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">📈 Aderência Média</div>
+                <div class="kpi-value" style="color: #f59e0b;">87%</div>
+                <div class="kpi-change negative">↓ -3% vs mês anterior</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">💰 Faturamento Mês</div>
+                <div class="kpi-value" style="font-size: 1.5rem; color: #14b8a6;">R$ 12.5M</div>
+                <div class="kpi-change positive">↑ +5% vs mês anterior</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">🎁 FOC (Custo) Acumulado</div>
+                <div class="kpi-value" style="font-size: 1.5rem; color: #ef4444;">R$ 245k</div>
+                <div class="kpi-change negative">↑ 1.96% do faturamento</div>
+            </div>
+        </div>
+
+        <!-- Alertas Críticos -->
+        <div class="section">
+            <div class="section-title">
+                🚨 Alertas Críticos Recentes
+            </div>
+            <div class="alert-list">
+                <div class="alert-item warning" onclick="showClientDetail('lab-abc')">
+                    <div class="alert-header">
+                        <span class="alert-icon">🟡</span>
+                        <span class="alert-title">Lab ABC - Crédito em 78% (Alerta de proximidade do limite)</span>
+                    </div>
+                    <div class="alert-description">
+                        Cliente usando R$ 78.000 de R$ 100.000 de limite mensal. Apenas R$ 22.000 disponíveis (22%)
+                    </div>
+                    <div class="alert-action">
+                        💡 Ação sugerida: Monitorar próximos pedidos e considerar aumento de limite ou análise de crédito
+                    </div>
+                </div>
+
+                <div class="alert-item critical" onclick="showClientDetail('lab-abc')">
+                    <div class="alert-header">
+                        <span class="alert-icon">🔴</span>
+                        <span class="alert-title">Lab ABC - Volume crítico abaixo do contrato</span>
+                    </div>
+                    <div class="alert-description">
+                        Cliente está há 2 meses comprando 32% abaixo do volume contratado (810k de 1.2M testes/mês)
+                    </div>
+                    <div class="alert-action">
+                        💡 Ação sugerida: Agendar reunião urgente para entender motivo da queda
+                    </div>
+                </div>
+
+                <div class="alert-item critical" onclick="showClientDetail('lab-xyz')">
+                    <div class="alert-header">
+                        <span class="alert-icon">🔴</span>
+                        <span class="alert-title">Lab XYZ - Risco de Churn (Queda abrupta)</span>
+                    </div>
+                    <div class="alert-description">
+                        Queda abrupta de 55% no volume no último mês (400k de 900k média dos últimos 6 meses)
+                    </div>
+                    <div class="alert-action">
+                        💡 Ação sugerida: CONTATO IMEDIATO - Verificar problema operacional ou concorrência
+                    </div>
+                </div>
+
+                <div class="alert-item warning">
+                    <div class="alert-header">
+                        <span class="alert-icon">🟡</span>
+                        <span class="alert-title">Lab DEF - Mudança no mix prejudicando rentabilidade</span>
+                    </div>
+                    <div class="alert-description">
+                        Cliente aumentou 35% compra de Bioquímica (margem menor) e reduziu 20% Hormônios (margem maior)
+                    </div>
+                    <div class="alert-action">
+                        💡 Ação sugerida: Analisar impacto na margem e considerar renegociação de preços
+                    </div>
+                </div>
+
+                <div class="alert-item warning">
+                    <div class="alert-header">
+                        <span class="alert-icon">🟡</span>
+                        <span class="alert-title">5 clientes com FOC acima de 2% do faturamento</span>
+                    </div>
+                    <div class="alert-description">
+                        Envios gratuitos (amostras, reposições) estão impactando margem em Lab ABC, Lab MNO, Lab PQR, Lab STU, Lab VWX
+                    </div>
+                    <div class="alert-action">
+                        💡 Ação sugerida: Revisar política de FOC e estabelecer limites mais claros com clientes
+                    </div>
+                </div>
+
+                <div class="alert-item opportunity">
+                    <div class="alert-header">
+                        <span class="alert-icon">🟢</span>
+                        <span class="alert-title">Lab GHI - Oportunidade (Volume acima do contrato)</span>
+                    </div>
+                    <div class="alert-description">
+                        Cliente está comprando 40% acima do volume contratado nos últimos 3 meses
+                    </div>
+                    <div class="alert-action">
+                        💡 Ação sugerida: Manter margem atual. Se solicitar desconto, negociar novo contrato com volume maior
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="section">
+            <div class="section-title">
+                📋 Carteira de Clientes
+            </div>
+            <div class="filters">
+                <button class="filter-btn active" onclick="filterClients('all')">Todos (45)</button>
+                <button class="filter-btn" onclick="filterClients('critical')">🔴 Críticos (8)</button>
+                <button class="filter-btn" onclick="filterClients('warning')">🟡 Atenção (12)</button>
+                <button class="filter-btn" onclick="filterClients('good')">🟢 Saudáveis (25)</button>
+            </div>
+
+            <!-- Tabela de Clientes -->
+            <table class="client-table">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Status</th>
+                        <th>Score de Saúde</th>
+                        <th>Variação Volume</th>
+                        <th>Faturamento</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr onclick="showClientDetail('lab-abc')" style="cursor: pointer;" data-status="critical">
+                        <td><strong>Lab ABC - Análises Clínicas</strong></td>
+                        <td>
+                            <span class="status-badge critical">
+                                🔴 Crítico
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div class="score-bar">
+                                    <div class="score-fill critical" style="width: 45%"></div>
+                                </div>
+                                <span style="font-weight: 600; color: #dc2626;">45%</span>
+                            </div>
+                        </td>
+                        <td style="color: #ef4444; font-weight: 600;">-32%</td>
+                        <td>R$ 820.000</td>
+                        <td><button class="btn btn-primary">Ver Detalhes</button></td>
+                    </tr>
+                    <tr onclick="showClientDetail('lab-xyz')" style="cursor: pointer;" data-status="critical">
+                        <td><strong>Lab XYZ - Diagnósticos</strong></td>
+                        <td>
+                            <span class="status-badge critical">
+                                🔴 Urgente
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div class="score-bar">
+                                    <div class="score-fill critical" style="width: 30%"></div>
+                                </div>
+                                <span style="font-weight: 600; color: #dc2626;">30%</span>
+                            </div>
+                        </td>
+                        <td style="color: #ef4444; font-weight: 600;">-55%</td>
+                        <td>R$ 400.000</td>
+                        <td><button class="btn btn-primary">Ver Detalhes</button></td>
+                    </tr>
+                    <tr data-status="warning">
+                        <td><strong>Lab DEF - Laboratório Médico</strong></td>
+                        <td>
+                            <span class="status-badge warning">
+                                🟡 Atenção
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div class="score-bar">
+                                    <div class="score-fill warning" style="width: 75%"></div>
+                                </div>
+                                <span style="font-weight: 600; color: #d97706;">75%</span>
+                            </div>
+                        </td>
+                        <td style="color: #f59e0b; font-weight: 600;">-15%</td>
+                        <td>R$ 900.000</td>
+                        <td><button class="btn btn-secondary">Ver Detalhes</button></td>
+                    </tr>
+                    <tr data-status="good">
+                        <td><strong>Lab GHI - Centro Diagnóstico</strong></td>
+                        <td>
+                            <span class="status-badge good">
+                                🟢 Ótimo
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div class="score-bar">
+                                    <div class="score-fill good" style="width: 95%"></div>
+                                </div>
+                                <span style="font-weight: 600; color: #0f766e;">95%</span>
+                            </div>
+                        </td>
+                        <td style="color: #14b8a6; font-weight: 600;">+40%</td>
+                        <td>R$ 1.500.000</td>
+                        <td><button class="btn btn-secondary">Ver Detalhes</button></td>
+                    </tr>
+                    <tr data-status="good">
+                        <td><strong>Lab JKL - Patologia Clínica</strong></td>
+                        <td>
+                            <span class="status-badge good">
+                                🟢 Ótimo
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div class="score-bar">
+                                    <div class="score-fill good" style="width: 92%"></div>
+                                </div>
+                                <span style="font-weight: 600; color: #0f766e;">92%</span>
+                            </div>
+                        </td>
+                        <td style="color: #14b8a6; font-weight: 600;">+5%</td>
+                        <td>R$ 950.000</td>
+                        <td><button class="btn btn-secondary">Ver Detalhes</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Detalhes do Cliente -->
+    <div id="client-detail" class="container client-detail">
+        <div class="back-button" onclick="showDashboard()">
+            ← Voltar para lista de clientes
+        </div>
+
+        <div class="section">
+            <div class="client-header">
+                <div>
+                    <div class="client-title">Lab ABC - Análises Clínicas</div>
+                    <div class="client-meta">
+                        👤 Vendedor: João Silva | 👔 Gerente: Maria Costa<br>
+                        📅 Vigência: Jan/2024 - Jan/2029 (48 meses restantes)<br>
+                        💰 Faturamento mínimo: R$ 1.200.000/mês | 📊 Tolerância: 10%
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1.5rem;">
+                    <div class="health-score">
+                        <div class="health-score-circle critical">45</div>
+                        <div style="font-size: 0.875rem; color: #718096;">Score de Saúde</div>
+                    </div>
+                    <div class="credit-profile">
+                        <div class="credit-profile-title">💳 Perfil de Crédito</div>
+                        <div class="credit-item">
+                            <span class="credit-label">Limite de Crédito:</span>
+                            <span class="credit-value">R$ 100.000/mês</span>
+                        </div>
+                        <div class="credit-item">
+                            <span class="credit-label">Crédito Usado:</span>
+                            <span class="credit-value" style="color: #f59e0b;">R$ 78.000</span>
+                        </div>
+                        <div class="credit-item">
+                            <span class="credit-label">Crédito Disponível:</span>
+                            <span class="credit-value" style="color: #14b8a6;">R$ 22.000</span>
+                        </div>
+                        <div class="credit-bar">
+                            <div class="credit-bar-fill medium" style="width: 78%;">78%</div>
+                        </div>
+                        <div class="credit-item">
+                            <span class="credit-label">Valor em Atraso:</span>
+                            <span class="credit-value" style="color: #ef4444;">R$ 15.000</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas do Cliente -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 1rem;">🚨 Alertas Ativos (5)</h3>
+                <div class="alert-list">
+                    <div class="alert-item warning">
+                        <div class="alert-header">
+                            <span class="alert-icon">🟡</span>
+                            <span class="alert-title">Crédito em 78% - Apenas 22% disponível</span>
+                        </div>
+                        <div class="alert-description">
+                            Limite: R$ 100.000/mês | Usado: R$ 78.000 | Disponível: R$ 22.000
+                        </div>
+                        <div class="alert-action">
+                            💡 Monitorar próximas compras. Cliente próximo do limite de crédito.
+                        </div>
+                    </div>
+
+                    <div class="alert-item critical">
+                        <div class="alert-header">
+                            <span class="alert-icon">🔴</span>
+                            <span class="alert-title">Volume 32% abaixo do contrato há 2 meses</span>
+                        </div>
+                        <div class="alert-description">
+                            Contrato: 1.200.000 testes/mês | Realizado: 810.000 testes/mês
+                        </div>
+                        <div class="alert-action">
+                            💡 Agendar reunião urgente com cliente
+                        </div>
+                    </div>
+
+                    <div class="alert-item warning">
+                        <div class="alert-header">
+                            <span class="alert-icon">🟡</span>
+                            <span class="alert-title">Mix mudou: -20% Bioquímica, +15% Hormônios</span>
+                        </div>
+                        <div class="alert-action">
+                            💡 Avaliar impacto na rentabilidade
+                        </div>
+                    </div>
+
+                    <div class="alert-item warning">
+                        <div class="alert-header">
+                            <span class="alert-icon">🟡</span>
+                            <span class="alert-title">Parou de comprar Glicose há 2 meses</span>
+                        </div>
+                        <div class="alert-action">
+                            💡 Verificar se cliente trocou de fornecedor
+                        </div>
+                    </div>
+
+                    <div class="alert-item warning">
+                        <div class="alert-header">
+                            <span class="alert-icon">🟡</span>
+                            <span class="alert-title">FOC acima do normal: R$ 18.450 (2.2% do faturamento)</span>
+                        </div>
+                        <div class="alert-description">
+                            Envios gratuitos estão impactando margem. Principal item: Glicose (reposição por vencimento)
+                        </div>
+                        <div class="alert-action">
+                            💡 Estabelecer política de reposição mais clara com cliente
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Volume -->
+            <div class="chart-container">
+                <div class="chart-title">📈 Volume Mensal (Testes) - Últimos 12 meses</div>
+                <div style="position: relative; height: 250px;">
+                    <div class="bar-chart">
+                        <div class="bar above-target" style="height: 95%;">
+                            <div class="bar-value">1.250k</div>
+                            <div class="bar-label">Jan</div>
+                        </div>
+                        <div class="bar above-target" style="height: 90%;">
+                            <div class="bar-value">1.200k</div>
+                            <div class="bar-label">Fev</div>
+                        </div>
+                        <div class="bar above-target" style="height: 88%;">
+                            <div class="bar-value">1.180k</div>
+                            <div class="bar-label">Mar</div>
+                        </div>
+                        <div class="bar above-target" style="height: 85%;">
+                            <div class="bar-value">1.150k</div>
+                            <div class="bar-label">Abr</div>
+                        </div>
+                        <div class="bar" style="height: 80%;">
+                            <div class="bar-value">1.100k</div>
+                            <div class="bar-label">Mai</div>
+                        </div>
+                        <div class="bar below-target" style="height: 72%;">
+                            <div class="bar-value">1.020k</div>
+                            <div class="bar-label">Jun</div>
+                        </div>
+                        <div class="bar below-target" style="height: 68%;">
+                            <div class="bar-value">980k</div>
+                            <div class="bar-label">Jul</div>
+                        </div>
+                        <div class="bar below-target" style="height: 65%;">
+                            <div class="bar-value">950k</div>
+                            <div class="bar-label">Ago</div>
+                        </div>
+                        <div class="bar below-target" style="height: 62%;">
+                            <div class="bar-value">920k</div>
+                            <div class="bar-label">Set</div>
+                        </div>
+                        <div class="bar below-target" style="height: 58%;">
+                            <div class="bar-value">870k</div>
+                            <div class="bar-label">Out</div>
+                        </div>
+                        <div class="bar below-target" style="height: 54%;">
+                            <div class="bar-value">810k</div>
+                            <div class="bar-label">Nov</div>
+                        </div>
+                        <div class="bar below-target" style="height: 50%;">
+                            <div class="bar-value">750k</div>
+                            <div class="bar-label">Dez</div>
+                        </div>
+                        <div class="bar below-target" style="height: 48%; opacity: 0.5;">
+                            <div class="bar-value" style="color: #999;">720k*</div>
+                            <div class="bar-label">Jan*</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 2rem; font-size: 0.875rem; color: #718096;">
+                        * Projeção baseada em tendência | 🔴 Abaixo do contrato | 🟢 Acima do contrato
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparação Contrato vs Realizado -->
+            <div class="chart-container">
+                <div class="chart-title">📊 Mix de Produtos: Contrato vs Realizado (Jan/2026)</div>
+                <table class="comparison-table">
+                    <tr>
+                        <td class="label">Bioquímica</td>
+                        <td class="value contracted">Contrato: 840.000 testes (70%)</td>
+                        <td class="value actual">Realizado: 567.000 testes (70%)</td>
+                        <td class="value variance negative">-32.5%</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Hormônios</td>
+                        <td class="value contracted">Contrato: 360.000 testes (30%)</td>
+                        <td class="value actual">Realizado: 243.000 testes (30%)</td>
+                        <td class="value variance negative">-32.5%</td>
+                    </tr>
+                    <tr style="background: #f7fafc; font-weight: 600;">
+                        <td class="label">TOTAL REAGENTES</td>
+                        <td class="value">1.200.000 testes</td>
+                        <td class="value">810.000 testes</td>
+                        <td class="value variance negative">-32.5%</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Serviços, Aluguel e FOC -->
+            <div class="chart-container">
+                <div class="chart-title">💰 Faturamento: Serviços, Aluguel e FOC (Jan/2026)</div>
+                <table class="comparison-table">
+                    <tr>
+                        <td class="label">🔧 Serviços (Manutenção/Assistência)</td>
+                        <td class="value contracted">Contrato: R$ 25.600</td>
+                        <td class="value actual">Faturado: R$ 25.600</td>
+                        <td class="value variance" style="color: #14b8a6;">0%</td>
+                    </tr>
+                    <tr>
+                        <td class="label">🏭 Locação de Equipamentos</td>
+                        <td class="value contracted">Contrato: R$ 19.350</td>
+                        <td class="value actual">Faturado: R$ 19.350</td>
+                        <td class="value variance" style="color: #14b8a6;">0%</td>
+                    </tr>
+                    <tr>
+                        <td class="label">🧪 Reagentes</td>
+                        <td class="value contracted">Contrato: R$ 996.000</td>
+                        <td class="value actual">Faturado: R$ 670.320</td>
+                        <td class="value variance negative">-32.7%</td>
+                    </tr>
+                    <tr>
+                        <td class="label">🧴 Auxiliares (Calibradores, Controles)</td>
+                        <td class="value contracted">Contrato: R$ 159.050</td>
+                        <td class="value actual">Faturado: R$ 107.030</td>
+                        <td class="value variance negative">-32.7%</td>
+                    </tr>
+                    <tr style="background: #f7fafc; font-weight: 600;">
+                        <td class="label">FATURAMENTO TOTAL</td>
+                        <td class="value">R$ 1.200.000</td>
+                        <td class="value">R$ 822.300</td>
+                        <td class="value variance negative">-31.5%</td>
+                    </tr>
+                </table>
+                
+                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div class="chart-title" style="margin: 0;">🎁 FOC (Free of Charge) - Impacto no Custo</div>
+                        <span style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; font-size: 0.875rem; border: 1px solid #fca5a5;">
+                            ⚠️ Custo Adicional
+                        </span>
+                    </div>
+                    <table class="comparison-table">
+                        <tr>
+                            <td class="label">Envios FOC (Amostras/Reposição)</td>
+                            <td class="value" style="color: #ef4444; font-weight: 600;">R$ 18.450</td>
+                            <td class="value contracted">2.2% do faturamento</td>
+                            <td class="value">
+                                <span style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.875rem; border: 1px solid #fca5a5;">
+                                    Impacta margem
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="label" style="padding-left: 2rem; font-size: 0.875rem; color: #64748b;">• Glicose (Kit teste)</td>
+                            <td class="value" style="color: #64748b;">R$ 8.200</td>
+                            <td class="value contracted" style="color: #64748b;">5 kits</td>
+                            <td class="value" style="color: #64748b;">Motivo: Reposição por vencimento</td>
+                        </tr>
+                        <tr>
+                            <td class="label" style="padding-left: 2rem; font-size: 0.875rem; color: #64748b;">• Vitamina D (Amostra)</td>
+                            <td class="value" style="color: #64748b;">R$ 6.100</td>
+                            <td class="value contracted" style="color: #64748b;">2 kits</td>
+                            <td class="value" style="color: #64748b;">Motivo: Teste para novo protocolo</td>
+                        </tr>
+                        <tr>
+                            <td class="label" style="padding-left: 2rem; font-size: 0.875rem; color: #64748b;">• Calibradores e Controles</td>
+                            <td class="value" style="color: #64748b;">R$ 4.150</td>
+                            <td class="value contracted" style="color: #64748b;">diversos</td>
+                            <td class="value" style="color: #64748b;">Motivo: Problema no lote anterior</td>
+                        </tr>
+                    </table>
+                    
+                    <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(to right, #fee2e2 0%, #ffffff 100%); border-left: 4px solid #ef4444; border-radius: 8px;">
+                        <div style="font-weight: 600; color: #dc2626; margin-bottom: 0.5rem;">⚠️ Atenção: Alto volume de FOC</div>
+                        <div style="font-size: 0.875rem; color: #64748b;">
+                            💡 <strong>Ação sugerida:</strong> Investigar motivos dos envios FOC e estabelecer política de reposição mais clara com o cliente. 
+                            FOC acima de 1.5% do faturamento impacta significativamente a rentabilidade.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Produtos -->
+            <div style="margin-top: 2rem;">
+                <h3 style="margin-bottom: 1rem;">📦 Top 10 Produtos (Variação vs Contrato)</h3>
+                <div class="product-grid">
+                    <div class="product-card" style="border-left: 4px solid #ef4444;">
+                        <div class="product-name">Glicose</div>
+                        <div class="product-stats">
+                            <span>Contrato: 50.000</span>
+                            <span style="color: #ef4444; font-weight: 600;">Real: 0 (-100%)</span>
+                        </div>
+                    </div>
+                    <div class="product-card" style="border-left: 4px solid #ef4444;">
+                        <div class="product-name">Colesterol</div>
+                        <div class="product-stats">
+                            <span>Contrato: 76.630</span>
+                            <span style="color: #ef4444; font-weight: 600;">Real: 45.000 (-41%)</span>
+                        </div>
+                    </div>
+                    <div class="product-card" style="border-left: 4px solid #14b8a6;">
+                        <div class="product-name">Vitamina D</div>
+                        <div class="product-stats">
+                            <span>Contrato: 57.600</span>
+                            <span style="color: #14b8a6; font-weight: 600;">Real: 70.880 (+23%)</span>
+                        </div>
+                    </div>
+                    <div class="product-card" style="border-left: 4px solid #f59e0b;">
+                        <div class="product-name">ALT</div>
+                        <div class="product-stats">
+                            <span>Contrato: 67.165</span>
+                            <span style="color: #f59e0b; font-weight: 600;">Real: 53.730 (-20%)</span>
+                        </div>
+                    </div>
+                    <div class="product-card" style="border-left: 4px solid #f59e0b;">
+                        <div class="product-name">Vitamina B12</div>
+                        <div class="product-stats">
+                            <span>Contrato: 49.630</span>
+                            <span style="color: #f59e0b; font-weight: 600;">Real: 42.185 (-15%)</span>
+                        </div>
+                    </div>
+                    <div class="product-card" style="border-left: 4px solid #14b8a6;">
+                        <div class="product-name">hFSH</div>
+                        <div class="product-stats">
+                            <span>Contrato: 6.000</span>
+                            <span style="color: #14b8a6; font-weight: 600;">Real: 6.120 (+2%)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Interno -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    💬 Chat Interno - Vendedor e Gestor
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message gestor">
+                        <div class="message-header">
+                            <strong>👔 Maria Costa (Gestor)</strong>
+                        </div>
+                        <div class="message-bubble">
+                            João, vi que o Lab ABC está com volume 32% abaixo. Já entrou em contato com eles?
+                        </div>
+                        <div class="message-time">Hoje, 09:15</div>
+                    </div>
+
+                    <div class="chat-message vendedor">
+                        <div class="message-header">
+                            <strong>👤 João Silva (Vendedor)</strong>
+                        </div>
+                        <div class="message-bubble">
+                            Oi Maria! Sim, liguei ontem. Eles mencionaram que tiveram problemas com um equipamento e reduziram temporariamente o volume de exames. Estou agendando reunião para segunda-feira.
+                        </div>
+                        <div class="message-time">Hoje, 09:42</div>
+                    </div>
+
+                    <div class="chat-message gestor">
+                        <div class="message-header">
+                            <strong>👔 Maria Costa (Gestor)</strong>
+                        </div>
+                        <div class="message-bubble">
+                            Ótimo! Veja se consegue entender quando voltam ao normal. E atenção: eles também estão com crédito em 78% do limite.
+                        </div>
+                        <div class="message-time">Hoje, 10:03</div>
+                    </div>
+
+                    <div class="chat-message vendedor">
+                        <div class="message-header">
+                            <strong>👤 João Silva (Vendedor)</strong>
+                        </div>
+                        <div class="message-bubble">
+                            Vou abordar os dois pontos na reunião. Eles têm R$ 15k em atraso também, certo? Devo mencionar?
+                        </div>
+                        <div class="message-time">Hoje, 10:15</div>
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Digite sua mensagem..."
+                        onkeypress="if(event.key === 'Enter') sendMessage()"
+                    >
+                    <button class="chat-send-btn" onclick="sendMessage()">
+                        <span>Enviar</span>
+                        <span>📤</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDashboard() {
+            document.getElementById('dashboard-main').style.display = 'block';
+            document.getElementById('client-detail').classList.remove('active');
+        }
+
+        function showClientDetail(clientId) {
+            document.getElementById('dashboard-main').style.display = 'none';
+            document.getElementById('client-detail').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function filterClients(status) {
+            // Remove active de todos os botões
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Adiciona active ao botão clicado
+            event.target.classList.add('active');
+            
+            // Pega todas as linhas da tabela
+            const rows = document.querySelectorAll('.client-table tbody tr');
+            
+            rows.forEach(row => {
+                if (status === 'all') {
+                    row.style.display = '';
+                } else {
+                    const rowStatus = row.getAttribute('data-status');
+                    if (rowStatus === status) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+
+            const chatMessages = document.getElementById('chatMessages');
+            const now = new Date();
+            const timeString = `Hoje, ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message vendedor';
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <strong>👤 João Silva (Vendedor)</strong>
+                </div>
+                <div class="message-bubble">
+                    ${message}
+                </div>
+                <div class="message-time">${timeString}</div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            input.value = '';
+        }
+    </script>
+</body>
+</html>
